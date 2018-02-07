@@ -6,12 +6,16 @@
 
   <ItemGroup>
     <None Remove="Resources\Splendor_Card_Table.csv" />
+    <None Remove="Resources\Splendor_Nobles.csv" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Resources\Splendor_Card_Table.csv">
+    <EmbeddedResource Include="Resources\Splendor_Card_Table.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Splendor_Nobles.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>
