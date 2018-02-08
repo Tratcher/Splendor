@@ -6,6 +6,11 @@ namespace Splendor.Engine
 {
     public class Player
     {
+        internal Player(string playerName)
+        {
+            Name = playerName;
+        }
+
         public string Name { get; }
 
         public IReadOnlyDictionary<GemType, int> Disks { get; }

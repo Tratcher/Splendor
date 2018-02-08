@@ -1,11 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Splendor.Engine
 {
     public class Game
     {
+        // TODO: What if we want to seed the board for testing?
+        public Game(string[] playerNames)
+        {
+            if (playerNames == null)
+            {
+                throw new ArgumentNullException(nameof(playerNames));
+            }
+
+            if (playerNames.Length < 2 || playerNames.Length > 4)
+            {
+                throw new ArgumentOutOfRangeException(nameof(playerNames), playerNames.Length, "2-4 players");
+            }
+
+            // Create players
+            var palayers = new List<Player>(playerNames.Length);
+            foreach (var playerName in playerNames)
+            {
+                palayers.Add(new Player(playerName));
+            }
+            Players = palayers;
+
+            // Load bank: Use all 5 gold. Gems- 2 players: 4 gems;  3 players: 5;  4 players: 7
+            var gems = Players.Count == 2 ? 4
+                : Players.Count == 3 ? 5
+                : 7;
+            var bank = new Bank(5, gems);
+
+            var loader = new ResourceLoader();
+            var nobles = loader.LoadNobles().Shuffle().Take(Players.Count + 1).ToList();
+            var cards = loader.LoadCards().Shuffle();
+
+            // Board
+            Board = new Board(bank, nobles, cards);
+        }
+
         // In turn order, 0 is start player
         public IReadOnlyList<Player> Players { get; }
 
@@ -18,16 +54,6 @@ namespace Splendor.Engine
         public bool IsGameOver { get; private set; }
 
         public Player Winner { get; private set; }
-
-        // Only called from the constructor
-        // TODO: What if we want to seed the board for testing?
-        private void Initialize(string[] playerNames)
-        {
-            // Create players
-            // Load cards, split by level, shuffle, deal
-            // Load Nobles, shuffle, deal one more than players
-            // Load bank: Use all 5 gold. Gems- 2 players: 4 gems;  3 players: 5;  4 players: 7
-        }
 
         // Verify everything is as it should be. Call as frequently as neccessary durring development, disable for 
         // No duplicate card assignments

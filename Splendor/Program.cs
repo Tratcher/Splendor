@@ -10,19 +10,20 @@ namespace Splendor
         {
             Console.WriteLine("Hello World!");
 
-            var loader = new ResourceLoader();
-            var cards = loader.LoadCards();
-            Console.WriteLine($"Loaded {cards.Count} cards");
-            foreach (var card in cards)
-            {
-                Console.WriteLine(ShowCard(card));
-            }
+            var game = new Game(new[] { "Player 1", "Player 2" });
 
-            var nobles = loader.LoadNobles();
-            Console.WriteLine($"Loaded {nobles.Count} nobles");
+            var nobles = game.Board.Nobles;
+            Console.WriteLine($"{nobles.Count} nobles available:");
             foreach (var noble in nobles)
             {
                 Console.WriteLine(ShowNoble(noble));
+            }
+
+            var cards = game.Board.AvailableCards;
+            Console.WriteLine($"{cards.Count} cards available:");
+            foreach (var card in cards)
+            {
+                Console.WriteLine(ShowCard(card));
             }
         }
 

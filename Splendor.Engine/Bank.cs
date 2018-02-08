@@ -6,7 +6,26 @@ namespace Splendor.Engine
 {
     public class Bank
     {
-        public IReadOnlyDictionary<GemType, int> Available { get; }
+        private Dictionary<GemType, int> _available = new Dictionary<GemType, int>(6);
+
+        public Bank(int gold, int otherGems)
+        {
+            var limits = new Dictionary<GemType, int>(5);
+            limits[GemType.Gold] = gold;
+            limits[GemType.Diamond] = otherGems;
+            limits[GemType.Emerald] = otherGems;
+            limits[GemType.Onyx] = otherGems;
+            limits[GemType.Ruby] = otherGems;
+            limits[GemType.Sapphire] = otherGems;
+            Limits = limits;
+
+            foreach (var pair in Limits)
+            {
+                _available.Add(pair.Key, pair.Value);
+            }
+        }
+
+        public IReadOnlyDictionary<GemType, int> Available => _available;
 
         public IReadOnlyDictionary<GemType, int> Limits { get; }
 
