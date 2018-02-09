@@ -7,6 +7,8 @@ namespace Splendor.Engine
 {
     public class Game
     {
+        private int _currentPlayerIndex;
+
         // TODO: What if we want to seed the board for testing?
         public Game(string[] playerNames)
         {
@@ -45,7 +47,7 @@ namespace Splendor.Engine
         // In turn order, 0 is start player
         public IReadOnlyList<Player> Players { get; }
 
-        public Player CurrentPlayer { get; }
+        public Player CurrentPlayer => Players[_currentPlayerIndex];
 
         public Board Board { get; }
 
@@ -212,6 +214,7 @@ namespace Splendor.Engine
         // Advance to next player
         private void AdvanceGame()
         {
+            _currentPlayerIndex = (_currentPlayerIndex + 1) % Players.Count;
             throw new NotImplementedException();
         }
     }
