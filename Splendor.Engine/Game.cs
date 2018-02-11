@@ -10,20 +10,20 @@ namespace Splendor.Engine
         private int _currentPlayerIndex;
 
         // TODO: What if we want to seed the board for testing?
-        public Game(string[] playerNames)
+        public Game(IList<string> playerNames)
         {
             if (playerNames == null)
             {
                 throw new ArgumentNullException(nameof(playerNames));
             }
 
-            if (playerNames.Length < 2 || playerNames.Length > 4)
+            if (playerNames.Count < 2 || playerNames.Count > 4)
             {
-                throw new ArgumentOutOfRangeException(nameof(playerNames), playerNames.Length, "2-4 players");
+                throw new ArgumentOutOfRangeException(nameof(playerNames), playerNames.Count, "2-4 players");
             }
 
             // Create players
-            var palayers = new List<Player>(playerNames.Length);
+            var palayers = new List<Player>(playerNames.Count);
             foreach (var playerName in playerNames)
             {
                 palayers.Add(new Player(playerName));
