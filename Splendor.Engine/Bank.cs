@@ -31,12 +31,16 @@ namespace Splendor.Engine
 
         internal void Take(GemType type, int count)
         {
-            // Availability check. Limit one at a time, or two if the stack is less than 2
+            // Availability check. Limit two at a time, and only if there's at least 4
+
+            _available[type] = _available[type] - count;
         }
 
         internal void Return(GemType type, int count)
         {
             // Limit check
+
+            _available[type] = _available[type] + count;
         }
     }
 }

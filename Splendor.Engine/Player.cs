@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -7,7 +8,32 @@ namespace Splendor.Engine
 {
     public class Player
     {
-        private readonly Dictionary<GemType, int> _disks = new Dictionary<GemType, int>(6);
+        private readonly Dictionary<GemType, int> _disks = new Dictionary<GemType, int>(6)
+        {
+            { GemType.Gold, 0 },
+            { GemType.Diamond, 0 },
+            { GemType.Emerald, 0 },
+            { GemType.Onyx, 0 },
+            { GemType.Ruby, 0 },
+            { GemType.Sapphire, 0 },
+        };
+        private readonly Dictionary<GemType, int> _bonses = new Dictionary<GemType, int>(5)
+        {
+            { GemType.Diamond, 0 },
+            { GemType.Emerald, 0 },
+            { GemType.Onyx, 0 },
+            { GemType.Ruby, 0 },
+            { GemType.Sapphire, 0 },
+        };
+        private readonly Dictionary<GemType, int> _totalGems = new Dictionary<GemType, int>(6)
+        {
+            { GemType.Gold, 0 },
+            { GemType.Diamond, 0 },
+            { GemType.Emerald, 0 },
+            { GemType.Onyx, 0 },
+            { GemType.Ruby, 0 },
+            { GemType.Sapphire, 0 },
+        };
         private readonly List<Card> _cards = new List<Card>(20);
         private readonly List<Card> _reserve = new List<Card>(3);
         private readonly List<Noble> _nobles = new List<Noble>(3);
@@ -21,59 +47,69 @@ namespace Splendor.Engine
 
         public IReadOnlyDictionary<GemType, int> Disks => _disks;
 
+        public IReadOnlyDictionary<GemType, int> Bonuses => _bonses;
+
+        public IReadOnlyDictionary<GemType, int> TotalGems => _totalGems;
+
         public IReadOnlyList<Card> Cards => _cards;
 
         // Not really secret from other players, they watched you reserve each.
+        // Except for the random draws?
         public IReadOnlyList<Card> Reserve => _reserve;
 
         public IReadOnlyList<Noble> Nobles => _nobles;
 
-        public int Points
-        {
-            get
-            {
-                var points = 0;
-                if (Cards.Count > 0)
-                {
-                    points += Cards.Select(c => c.PointValue).Aggregate((a, b) => a + b);
-                }
-                if (Nobles.Count > 0)
-                {
-                    points += Nobles.Select(c => c.PointValue).Aggregate((a, b) => a + b);
-                }
-                return points;
-            }
-        }
+        public int Points { get; private set; }
 
         internal void AddDisks(GemType type, int count)
         {
-            // Limit 10
+            // TODO: Limit 10 total
+            _disks[type] = _disks[type] + count;
+            _totalGems[type] = _totalGems[type] + count;
         }
 
         internal void RemoveDisks(GemType type, int count)
         {
-
+            var current = _disks[type];
+            if (count > current)
+            {
+                throw new InvalidOperationException("Attempting to remove more discs than preasent");
+            }
+            _disks[type] = _disks[type] - count;
+            _totalGems[type] = _totalGems[type] - count;
         }
 
         internal void AddCard(Card card)
         {
-
+            Points += card.PointValue;
+            _bonses[card.Bonus] = _bonses[card.Bonus] + 1;
+            _totalGems[card.Bonus] = _totalGems[card.Bonus] + 1;
+            _cards.Add(card);
         }
 
         internal void AddNoble(Noble noble)
         {
-
+            Points += noble.PointValue;
+            _nobles.Add(noble);
         }
 
         internal void AddReserve(Card card)
         {
             // Limit 3
+            if (_reserve.Count >= 3)
+            {
+                throw new InvalidOperationException("The reserve is already full.");
+            }
+            _reserve.Add(card);
         }
 
         // Remove from reserve and add to cards. Costs are paid separately.
         internal void TransferFromReserve(Card card)
         {
+            var removed = _reserve.Remove(card);
+            Debug.Assert(removed, "Reserve card not found");
 
-        }
+            AddCard(card);
+;        }
     }
 }

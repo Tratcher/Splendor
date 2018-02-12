@@ -43,6 +43,26 @@ namespace Splendor.Engine
             // Remove from Available cards, deal replacement
         }
 
+        // Reserve directly off the draw pile for a given level
+        internal Card TakeSecret(int level)
+        {
+            // Verify level 1-3
+
+            // Verify level has card
+
+            switch (level)
+            {
+                case 1:
+                    return Deck1.Pop();
+                case 2:
+                    return Deck2.Pop();
+                case 3:
+                    return Deck3.Pop();
+                default:
+                    throw new IndexOutOfRangeException(level.ToString());
+            }
+        }
+
         internal void TakeNoble(Noble noble)
         {
             // Verify available

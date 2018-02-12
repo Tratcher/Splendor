@@ -75,11 +75,11 @@ namespace Splendor.Engine
         // Take 3 Gems of different colors.  As many as possible if 3 colors not available.
         // Can't take Gold
         // Disk limit
-        public void TakeDistinctGems(GemType[] types, IEnumerable<KeyValuePair<GemType, int>> dicards)
+        public void TakeDistinctGems(IList<GemType> types, IEnumerable<KeyValuePair<GemType, int>> discards)
         {
             ThrowIfGameOver();
 
-            // Can you request 0? E.g. pass
+            // Can you request 0? E.g. pass. It seems like it's possible to pass because the bank may run out of disks
 
             // Verify The types are distinct
 
@@ -92,8 +92,21 @@ namespace Splendor.Engine
             // Verify the player owns specified discards.
 
             // Discard gems
+            if (discards != null)
+            {
+                foreach (var type in discards)
+                {
+                    CurrentPlayer.RemoveDisks(type.Key, type.Value);
+                    Board.Bank.Return(type.Key, type.Value);
+                }
+            }
 
             // Aquire gems
+            foreach (var type in types)
+            {
+                Board.Bank.Take(type, 1);
+                CurrentPlayer.AddDisks(type, 1);
+            }
 
             AdvanceGame();
         }
@@ -101,7 +114,7 @@ namespace Splendor.Engine
         // Take 2 Gems of the same color.  Color must have at least 4 gems available. 
         // Can't take Gold
         // Disk limit
-        public void TakeTwoGems(GemType type, IEnumerable<KeyValuePair<GemType, int>> dicards)
+        public void TakeTwoGems(GemType type, IEnumerable<KeyValuePair<GemType, int>> discards)
         {
             ThrowIfGameOver();
 
@@ -114,8 +127,18 @@ namespace Splendor.Engine
             // Verify the player owns specified discards.
 
             // Discard gems
+            if (discards != null)
+            {
+                foreach (var group in discards)
+                {
+                    CurrentPlayer.RemoveDisks(group.Key, group.Value);
+                    Board.Bank.Return(group.Key, group.Value);
+                }
+            }
 
             // Aquire gems
+            Board.Bank.Take(type, 2);
+            CurrentPlayer.AddDisks(type, 2);
 
             AdvanceGame();
         }
@@ -124,7 +147,7 @@ namespace Splendor.Engine
         // Hand limit
         // Disk limit
         // You may discard the aquired gold (but why would you?)
-        public void ReserveCard(string id, GemType? dicard)
+        public void ReserveCard(string id, GemType? discard)
         {
             ThrowIfGameOver();
 
@@ -138,10 +161,21 @@ namespace Splendor.Engine
             // Verify player owns discard or is discarding the gold aquired.
 
             // Move card from available to reserve
+            var card = Board.AvailableCards.Where(c => c.Id == id).Single();
+            Board.TakeCard(card);
+            CurrentPlayer.AddReserve(card);
 
             // Discard specified
+            if (discard.HasValue)
+            {
+                CurrentPlayer.RemoveDisks(discard.Value, 1);
+                Board.Bank.Return(discard.Value, 1);
+            }
 
             // Gain gold
+            Board.Bank.Take(GemType.Gold, 1);
+            CurrentPlayer.AddDisks(GemType.Gold, 1);
+
 
             AdvanceGame();
         }
@@ -152,7 +186,7 @@ namespace Splendor.Engine
         // Disk limit
         // Empty deck
         // You may discard the aquired gold (byt why would you?)
-        public void ReserveSecret(int level, GemType? dicard)
+        public void ReserveSecret(int level, GemType? discard)
         {
             ThrowIfGameOver();
 
@@ -166,10 +200,19 @@ namespace Splendor.Engine
             // Verify player owns discard or is discarding the gold aquired.
 
             // Move card from deck to reserve
+            var card = Board.TakeSecret(level);
+            CurrentPlayer.AddReserve(card);
 
             // Discard specified
+            if (discard.HasValue)
+            {
+                CurrentPlayer.RemoveDisks(discard.Value, 1);
+                Board.Bank.Return(discard.Value, 1);
+            }
 
             // Gain gold
+            Board.Bank.Take(GemType.Gold, 1);
+            CurrentPlayer.AddDisks(GemType.Gold, 1);
 
             AdvanceGame();
         }
@@ -183,18 +226,32 @@ namespace Splendor.Engine
             ThrowIfGameOver();
 
             // Verify card is available or in reserve
+            var fromReserve = CurrentPlayer.Reserve.Where(c => c.Id == id).SingleOrDefault();
+            var fromAvailable = CurrentPlayer.Reserve.Where(c => c.Id == id).SingleOrDefault();
 
             // Verify card is affordable (inlcuding gold as needed)
 
             // Verify noble is available
+            if (noble != null)
+            {
+                throw new NotImplementedException("Noble");
+            }
 
             // Verify noble requirements will be met after purchase
 
             // If no noble is specified, try selecting one who's requirements will be met after purchase
 
+            //  Design bug: Claiming nobles is not part of the purchase action. Since it's possible for you
+            //  to be able to afford more than one when you're only allowed to take one, on your subsequent turn
+            //  you may claim another without an additional purchase. On that turn you may still have a choice,
+            //  so you need to be able specify a noble on any type of action.
+            //  Proposal: Many different actions require similar parameters. Make a general state object that
+            //  includes disk aquisitions, discards, noble selection, and a card selection id. The secret reservation
+            //  level is the only unique parameter.
+
             // Pay price (e.g. return tokens to bank as needed)
 
-            // Move card from reserve or store player's stack
+            // Move card from reserve or available to player's stack
 
             // Move noble from board to player, if any.
 
@@ -209,13 +266,14 @@ namespace Splendor.Engine
             }
         }
 
-        // Check if final round
-        // Check if game over, check winner
-        // Advance to next player
         private void AdvanceGame()
         {
+            // Check if final round
+
+            // Check if game over, check winner
+
+            // Advance to next player
             _currentPlayerIndex = (_currentPlayerIndex + 1) % Players.Count;
-            throw new NotImplementedException();
         }
     }
 }
