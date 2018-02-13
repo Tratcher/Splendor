@@ -31,18 +31,17 @@ namespace Splendor
             switch (key.KeyChar)
             {
                 case '3':
-                    Console.WriteLine("Select the disk types separated by spaces: (d)iamond, (s)apphire, (e)merald, (r)uby, (o)nyx");
+                    Console.WriteLine("Select the disk types with no spaces: (d)iamond, (s)apphire, (e)merald, (r)uby, (o)nyx");
                     var input = Console.ReadLine();
-                    var selections = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     // TODO: Input validation:
                     // Not gold
                     // At least one exists in the store
                     // 1-3 count
                     // Distinct types
                     var types = new List<GemType>(3);
-                    foreach (var ch in selections)
+                    for (int i = 0; i < input.Length; i++)
                     {
-                        types.Add(LookupUpGemType(ch[0]));
+                        types.Add(LookupUpGemType(input[i]));
                     }
 
                     // TODO: If this would put you over 10, discard
@@ -57,7 +56,7 @@ namespace Splendor
                     // At least one exists in the store
                     // 1-3 count
                     // Distinct types
-                    var type = LookupUpGemType(input[0]));
+                    var type = LookupUpGemType(input[0]);
 
                     // TODO: If this would put you over 10, discard
 
@@ -98,7 +97,7 @@ namespace Splendor
 
                     // Do I have the choice of multiple nobles? If so which one do I want?
 
-                    game.Purchase(input, null);
+                    game.Purchase(input);
                     return;
                 default:
                     Console.WriteLine($"Invalid input '{key.KeyChar}'");
@@ -140,7 +139,7 @@ namespace Splendor
 
             var cards = game.Board.AvailableCards;
             Console.WriteLine($"{cards.Count} cards available:");
-            foreach (var card in cards.OrderBy(card => card.Level))
+            foreach (var card in cards.OrderByDescending(card => card.PointValue).OrderByDescending(card => card.Level))
             {
                 Console.WriteLine(ShowCard(card));
             }
@@ -156,7 +155,7 @@ namespace Splendor
 
         private static string ShowPlayer(Player player)
         {
-            var builder = new StringBuilder($"Name: {player.Name}, Points: {player.Points}\r\nGems: ");
+            var builder = new StringBuilder($"Name: {player.Name}, Points: {player.Points}\r\nGems:\r\n");
             ShowGemAmounts(GemType.Diamond, player, builder);
             ShowGemAmounts(GemType.Emerald, player, builder);
             ShowGemAmounts(GemType.Onyx, player, builder);
@@ -164,7 +163,7 @@ namespace Splendor
             ShowGemAmounts(GemType.Sapphire, player, builder);
             
             var disks = player.Disks[GemType.Gold];
-            builder.Append($"{GemType.Gold} {disks}d, ");
+            builder.Append($"{GemType.Gold.ToString().PadRight(13)} {disks}d = {disks}");
             
             if (player.Reserve.Count > 0)
             {
@@ -182,12 +181,15 @@ namespace Splendor
             var bonus = player.Bonuses[type];
             var disks = player.Disks[type];
             var total = player.TotalGems[type];
-            builder.Append($"{type} {bonus}b + {disks}d = {total}, ");
+            if (total > 0)
+            {
+                builder.AppendLine($"{type.ToString().PadRight(8)} {bonus}b + {disks}d = {total}");
+            }
         }
 
         private static string ShowCard(Card card)
         {
-            var builder = new StringBuilder($"ID: {card.Id}, Level: {card.Level}, Points: {card.PointValue}, Bonus: {card.Bonus}, Cost: ");
+            var builder = new StringBuilder($"ID: {card.Id.ToString().PadLeft(2)}, Level: {card.Level}, Points: {card.PointValue}, Bonus: {card.Bonus.ToString().PadRight(8)} Cost: ");
             foreach (var item in card.Cost)
             {
                 builder.Append($"{item.Key}={item.Value}, ");

@@ -75,7 +75,7 @@ namespace Splendor.Engine
         // Take 3 Gems of different colors.  As many as possible if 3 colors not available.
         // Can't take Gold
         // Disk limit
-        public void TakeDistinctGems(IList<GemType> types, IEnumerable<KeyValuePair<GemType, int>> discards)
+        public void TakeDistinctGems(IList<GemType> types, IEnumerable<KeyValuePair<GemType, int>> discards, Noble noble = null)
         {
             ThrowIfGameOver();
 
@@ -90,6 +90,8 @@ namespace Splendor.Engine
             // If discarding, verify new total is exactly 10. Can't discard and get below 10.
 
             // Verify the player owns specified discards.
+
+            ClaimNoble(noble);
 
             // Discard gems
             if (discards != null)
@@ -114,7 +116,7 @@ namespace Splendor.Engine
         // Take 2 Gems of the same color.  Color must have at least 4 gems available. 
         // Can't take Gold
         // Disk limit
-        public void TakeTwoGems(GemType type, IEnumerable<KeyValuePair<GemType, int>> discards)
+        public void TakeTwoGems(GemType type, IEnumerable<KeyValuePair<GemType, int>> discards, Noble noble = null)
         {
             ThrowIfGameOver();
 
@@ -125,6 +127,8 @@ namespace Splendor.Engine
             // If discarding, verify new total is exactly 10. Can't discard and get below 10.
 
             // Verify the player owns specified discards.
+
+            ClaimNoble(noble);
 
             // Discard gems
             if (discards != null)
@@ -147,7 +151,7 @@ namespace Splendor.Engine
         // Hand limit
         // Disk limit
         // You may discard the aquired gold (but why would you?)
-        public void ReserveCard(string id, GemType? discard)
+        public void ReserveCard(string id, GemType? discard, Noble noble = null)
         {
             ThrowIfGameOver();
 
@@ -159,6 +163,8 @@ namespace Splendor.Engine
             //  discard must not be specified if current disks < 10.
 
             // Verify player owns discard or is discarding the gold aquired.
+
+            ClaimNoble(noble);
 
             // Move card from available to reserve
             var card = Board.AvailableCards.Where(c => c.Id == id).Single();
@@ -186,7 +192,7 @@ namespace Splendor.Engine
         // Disk limit
         // Empty deck
         // You may discard the aquired gold (byt why would you?)
-        public void ReserveSecret(int level, GemType? discard)
+        public void ReserveSecret(int level, GemType? discard, Noble noble = null)
         {
             ThrowIfGameOver();
 
@@ -198,6 +204,8 @@ namespace Splendor.Engine
             //  discard must not be specified if current disks < 10.
 
             // Verify player owns discard or is discarding the gold aquired.
+
+            ClaimNoble(noble);
 
             // Move card from deck to reserve
             var card = Board.TakeSecret(level);
@@ -221,26 +229,47 @@ namespace Splendor.Engine
         // Gold will be consumed automatically if required
         // Claim a noble if possible. If none is specified and you can afford one it will
         //  be claimed automatically.
-        public void Purchase(string id, Noble noble)
+        public void Purchase(string id, Noble noble = null)
         {
             ThrowIfGameOver();
 
             // Verify card is available or in reserve
             var fromReserve = CurrentPlayer.Reserve.Where(c => c.Id == id).SingleOrDefault();
-            var fromAvailable = CurrentPlayer.Reserve.Where(c => c.Id == id).SingleOrDefault();
+            var fromAvailable = Board.AvailableCards.Where(c => c.Id == id).SingleOrDefault();
+            var card = fromReserve ?? fromAvailable ?? throw new InvalidOperationException($"Card {id} could not be found.");
 
             // Verify card is affordable (inlcuding gold as needed)
 
-            // Verify noble is available
-            if (noble != null)
+            // Pay price (e.g. return tokens to bank as needed)
+            foreach (var cost in card.Cost)
             {
-                throw new NotImplementedException("Noble");
+                var diff = cost.Value - CurrentPlayer.Bonuses[cost.Key];
+                if (diff > 0)
+                {
+                    var gold = diff - CurrentPlayer.Disks[cost.Key];
+                    if (gold > 0)
+                    {
+                        CurrentPlayer.RemoveDisks(GemType.Gold, gold);
+                        Board.Bank.Return(GemType.Gold, gold);
+                        diff -= gold;
+                    }
+                    CurrentPlayer.RemoveDisks(cost.Key, diff);
+                    Board.Bank.Return(cost.Key, diff);
+                }
             }
 
-            // Verify noble requirements will be met after purchase
+            // Move card from reserve or available to player's stack
+            if (fromReserve != null)
+            {
+                CurrentPlayer.TransferFromReserve(card);
+            }
+            else
+            {
+                Board.TakeCard(card);
+                CurrentPlayer.AddCard(fromAvailable);
+            }
 
-            // If no noble is specified, try selecting one who's requirements will be met after purchase
-
+            ClaimNoble(noble, card.Bonus);
             //  Design bug: Claiming nobles is not part of the purchase action. Since it's possible for you
             //  to be able to afford more than one when you're only allowed to take one, on your subsequent turn
             //  you may claim another without an additional purchase. On that turn you may still have a choice,
@@ -249,13 +278,20 @@ namespace Splendor.Engine
             //  includes disk aquisitions, discards, noble selection, and a card selection id. The secret reservation
             //  level is the only unique parameter.
 
-            // Pay price (e.g. return tokens to bank as needed)
-
-            // Move card from reserve or available to player's stack
-
-            // Move noble from board to player, if any.
-
             AdvanceGame();
+        }
+
+        private void ClaimNoble(Noble noble, GemType bonus = GemType.None)
+        {
+            // Verify noble is available
+            if (noble != null)
+            {
+                throw new NotImplementedException("Noble");
+            }
+
+            // Verify noble requirements have been met, or will be met with the added purchase bonus
+
+            // If no noble is specified, try selecting one who's requirements have or will be met
         }
 
         private void ThrowIfGameOver()
