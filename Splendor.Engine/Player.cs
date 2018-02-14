@@ -47,6 +47,8 @@ namespace Splendor.Engine
 
         public IReadOnlyDictionary<GemType, int> Disks => _disks;
 
+        public int TotalDisks { get; private set; }
+
         public IReadOnlyDictionary<GemType, int> Bonuses => _bonses;
 
         public IReadOnlyDictionary<GemType, int> TotalGems => _totalGems;
@@ -63,18 +65,31 @@ namespace Splendor.Engine
 
         internal void AddDisks(GemType type, int count)
         {
-            // TODO: Limit 10 total
+            if (count <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), count, "");
+            }
+            // Limit 10 total
+            if (count + TotalDisks > 10)
+            {
+                throw new InvalidOperationException("The player cannot hold more than 10 disks.");
+            }
+            TotalDisks += count;
             _disks[type] = _disks[type] + count;
             _totalGems[type] = _totalGems[type] + count;
         }
 
         internal void RemoveDisks(GemType type, int count)
         {
-            var current = _disks[type];
-            if (count > current)
+            if (count <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), count, "");
+            }
+            if (count > _disks[type])
             {
                 throw new InvalidOperationException("Attempting to remove more discs than preasent");
             }
+            TotalDisks -= count;
             _disks[type] = _disks[type] - count;
             _totalGems[type] = _totalGems[type] - count;
         }
@@ -107,9 +122,12 @@ namespace Splendor.Engine
         internal void TransferFromReserve(Card card)
         {
             var removed = _reserve.Remove(card);
-            Debug.Assert(removed, "Reserve card not found");
+            if (!_reserve.Remove(card))
+            {
+                throw new InvalidOperationException($"Reserve card {card.Id} not found");
+            }
 
             AddCard(card);
-;        }
+        }
     }
 }

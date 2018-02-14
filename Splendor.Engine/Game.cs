@@ -80,6 +80,7 @@ namespace Splendor.Engine
             ThrowIfGameOver();
 
             // Can you request 0? E.g. pass. It seems like it's possible to pass because the bank may run out of disks
+            //  and your reserve could be full, yet you may still not be able to afford anything.
 
             // Verify The types are distinct
 
@@ -239,6 +240,20 @@ namespace Splendor.Engine
             var card = fromReserve ?? fromAvailable ?? throw new InvalidOperationException($"Card {id} could not be found.");
 
             // Verify card is affordable (inlcuding gold as needed)
+            var goldNeeded = 0;
+            var gold = CurrentPlayer.Disks[GemType.Gold];
+            foreach (var cost in card.Cost)
+            {
+                var diff = cost.Value - CurrentPlayer.Bonuses[cost.Key];
+                if (diff > 0)
+                {
+                    goldNeeded += diff - CurrentPlayer.Disks[cost.Key];
+                    if (goldNeeded > gold)
+                    {
+                        throw new InvalidOperationException($"Insufficient {cost.Key} or {GemType.Gold} for card {card.Id}.");
+                    }
+                }
+            }
 
             // Pay price (e.g. return tokens to bank as needed)
             foreach (var cost in card.Cost)
@@ -246,12 +261,12 @@ namespace Splendor.Engine
                 var diff = cost.Value - CurrentPlayer.Bonuses[cost.Key];
                 if (diff > 0)
                 {
-                    var gold = diff - CurrentPlayer.Disks[cost.Key];
-                    if (gold > 0)
+                    goldNeeded = diff - CurrentPlayer.Disks[cost.Key];
+                    if (goldNeeded > 0)
                     {
-                        CurrentPlayer.RemoveDisks(GemType.Gold, gold);
-                        Board.Bank.Return(GemType.Gold, gold);
-                        diff -= gold;
+                        CurrentPlayer.RemoveDisks(GemType.Gold, goldNeeded);
+                        Board.Bank.Return(GemType.Gold, goldNeeded);
+                        diff -= goldNeeded;
                     }
                     CurrentPlayer.RemoveDisks(cost.Key, diff);
                     Board.Bank.Return(cost.Key, diff);
@@ -269,7 +284,7 @@ namespace Splendor.Engine
                 CurrentPlayer.AddCard(fromAvailable);
             }
 
-            ClaimNoble(noble, card.Bonus);
+            ClaimNoble(noble);
             //  Design bug: Claiming nobles is not part of the purchase action. Since it's possible for you
             //  to be able to afford more than one when you're only allowed to take one, on your subsequent turn
             //  you may claim another without an additional purchase. On that turn you may still have a choice,
@@ -281,17 +296,35 @@ namespace Splendor.Engine
             AdvanceGame();
         }
 
-        private void ClaimNoble(Noble noble, GemType bonus = GemType.None)
+        private void ClaimNoble(Noble noble)
         {
-            // Verify noble is available
-            if (noble != null)
+            if (noble == null)
             {
-                throw new NotImplementedException("Noble");
+                // If no noble is specified, try selecting one who's requirements have or will be met.
+                // Most of the time there won't be any. Sometimes there will be one. Rarely there will be multiple.
+                noble = Board.Nobles.Where(n => Utilities.RequirementsMet(n.Requirements, CurrentPlayer.Bonuses)).FirstOrDefault();
+            }
+            else
+            {
+                // Verify noble is available
+                if (!Board.Nobles.Contains(noble))
+                {
+                    throw new InvalidOperationException($"Noble {noble.Id} not found.");
+                }
+
+                // Verify noble requirements have been met
+                if (!Utilities.RequirementsMet(noble.Requirements, CurrentPlayer.Bonuses))
+                {
+                    throw new InvalidOperationException($"The requirements for noble {noble.Id} have not been met.");
+                }
             }
 
-            // Verify noble requirements have been met, or will be met with the added purchase bonus
-
-            // If no noble is specified, try selecting one who's requirements have or will be met
+            // Claim it
+            if (noble != null)
+            {
+                Board.TakeNoble(noble);
+                CurrentPlayer.AddNoble(noble);
+            }
         }
 
         private void ThrowIfGameOver()

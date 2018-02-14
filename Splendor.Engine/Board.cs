@@ -41,7 +41,12 @@ namespace Splendor.Engine
 
         private Stack<Card> GetDeck(int level) => Decks[level - 1];
 
-        public bool LevelDeckIsEmpty(int level)
+        public int GetLevelDeckCount(int level)
+        {
+            return GetDeck(level).Count;
+        }
+
+        public bool CheckLevelDeckIsEmpty(int level)
         {
             return GetDeck(level).Count == 0;
         }
