@@ -14,9 +14,9 @@ namespace Splendor
 
             var playerControls = new[]
             {
-                new ConsolePlayer("Console 1"),
-                new ConsolePlayer("Console 2"),
-                new ConsolePlayer("Console 3"),
+                new RandomPlayer("Random 1"),
+                new RandomPlayer("Random 1"),
+                new RandomPlayer("Random 1"),
             };
 
             var playerNames = playerControls.Select(p => p.Name).ToList();

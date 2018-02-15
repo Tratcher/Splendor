@@ -67,7 +67,7 @@ namespace Splendor
                             continue;
                         }
 
-                        // At least one exists in the store
+                        // At least one exists in the bank
                         foreach (var disk in types)
                         {
                             if (game.Board.Bank.Available[disk] == 0)
@@ -172,19 +172,26 @@ namespace Splendor
                         game.TakeTwoGems(selection, discards);
                         return;
                     case 'r':
+                        // Verify reserve limit (3)
+                        if (game.CurrentPlayer.Reserve.Count == 3)
+                        {
+                            Console.WriteLine($"Too many cards already reserved.");
+                            continue;
+                        }
+
                         Console.Write("Enter the card Id to reserve: ");
                         input = Console.ReadLine();
 
                         // Verify card available
                         if (game.Board.AvailableCards.Where(c => c.Id == input).SingleOrDefault() == null)
                         {
-                            Console.WriteLine($"Card {input} not found.");
+                            Console.WriteLine($"Card id {input} not found.");
                             continue;
                         }
 
                         // Check if at disk limit 10 and must discard (if there's gold left)
                         GemType? discardType = null;
-                        if (game.Board.Bank.Available[GemType.Gold] > 0 || game.CurrentPlayer.TotalDisks == 10)
+                        if (game.Board.Bank.Available[GemType.Gold] > 0 && game.CurrentPlayer.TotalDisks == 10)
                         {
                             Console.WriteLine($"Select 1 disk to discard.");
                             input = Console.ReadLine();
@@ -205,6 +212,13 @@ namespace Splendor
                         game.ReserveCard(input, discardType);
                         return;
                     case 's':
+                        // Verify reserve limit (3)
+                        if (game.CurrentPlayer.Reserve.Count == 3)
+                        {
+                            Console.WriteLine($"Too many cards already reserved.");
+                            continue;
+                        }
+
                         Console.Write("Enter the card level to reserve: ");
                         input = Console.ReadLine();
                         var level = int.Parse(input);
@@ -217,7 +231,7 @@ namespace Splendor
                         }
 
                         // Verify level has cards
-                        if (!game.Board.CheckLevelDeckIsEmpty(level))
+                        if (game.Board.CheckLevelDeckIsEmpty(level))
                         {
                             Console.WriteLine($"Level {level} deck is empty.");
                             continue;
@@ -225,7 +239,7 @@ namespace Splendor
 
                         // Check if at disk limit 10 and must discard (if there's gold left)
                         discardType = null;
-                        if (game.Board.Bank.Available[GemType.Gold] > 0 || game.CurrentPlayer.TotalDisks == 10)
+                        if (game.Board.Bank.Available[GemType.Gold] > 0 && game.CurrentPlayer.TotalDisks == 10)
                         {
                             Console.WriteLine($"Select 1 disk to discard.");
                             input = Console.ReadLine();

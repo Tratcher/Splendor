@@ -7,7 +7,17 @@ namespace Splendor.Engine
 {
     public static class Utilities
     {
-        private static readonly Random _random = new Random();
+        public static readonly Random Random = new Random();
+
+        // Gem disk types that can be selected from the bank. E.g. not Gold.
+        public static readonly IReadOnlyList<GemType> SelectableDisks = new List<GemType>()
+        {
+            GemType.Diamond,
+            GemType.Emerald,
+            GemType.Onyx,
+            GemType.Ruby,
+            GemType.Sapphire,
+        };
 
         public static IReadOnlyList<T> Shuffle<T>(this IEnumerable<T> input)
         {
@@ -16,7 +26,7 @@ namespace Splendor.Engine
             for (int i = 0; i < array.Length; i++)
             {
                 var temp = array[i];
-                var dest = _random.Next(array.Length);
+                var dest = Random.Next(array.Length);
                 array[i] = array[dest];
                 array[dest] = temp;
             }

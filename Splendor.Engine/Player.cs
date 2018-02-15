@@ -121,7 +121,6 @@ namespace Splendor.Engine
         // Remove from reserve and add to cards. Costs are paid separately.
         internal void TransferFromReserve(Card card)
         {
-            var removed = _reserve.Remove(card);
             if (!_reserve.Remove(card))
             {
                 throw new InvalidOperationException($"Reserve card {card.Id} not found");

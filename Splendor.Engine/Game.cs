@@ -79,18 +79,54 @@ namespace Splendor.Engine
         {
             ThrowIfGameOver();
 
-            // Can you request 0? E.g. pass. It seems like it's possible to pass because the bank may run out of disks
-            //  and your reserve could be full, yet you may still not be able to afford anything.
+            // Verify not Gold
+            if (types.Where(type => type == GemType.Gold).Any())
+            {
+                throw new InvalidOperationException("Gold cannot be selected.");
+            }
 
             // Verify The types are distinct
+            if (types.Distinct().Count() < types.Count)
+            {
+                throw new InvalidOperationException("Types must be unique.");
+            }
 
-            // Verify not Gold
+            // Can you request 0? E.g. pass. It seems like it's possible to pass because the bank may run out of disks
+            //  and your reserve could be full, yet you may still not be able to afford anything.
+            // 0-3 count
+            if (types.Count > 3)
+            {
+                throw new InvalidOperationException("Too many types selected.");
+            }
 
-            // Verify The bank has sufficient quantity.
+            // At least one exists in the bank
+            foreach (var disk in types)
+            {
+                if (Board.Bank.Available[disk] == 0)
+                {
+                    throw new InvalidOperationException($"No {disk} in the bank.");
+                }
+            }
 
             // If discarding, verify new total is exactly 10. Can't discard and get below 10.
+            var totalDiscards = discards?.Select(pair => pair.Value).Sum() ?? 0;
+            var newTotal = CurrentPlayer.TotalDisks + types.Count - totalDiscards;
+            if (newTotal > 10)
+            {
+                throw new InvalidOperationException("Insufficient discards.");
+            }
 
             // Verify the player owns specified discards.
+            if (discards != null)
+            {
+                foreach (var set in discards)
+                {
+                    if (CurrentPlayer.Disks[set.Key] < set.Value)
+                    {
+                        throw new InvalidOperationException("Discard count mismatch.");
+                    }
+                }
+            }
 
             ClaimNoble(noble);
 
@@ -122,12 +158,36 @@ namespace Splendor.Engine
             ThrowIfGameOver();
 
             // Verify not Gold
+            if (type == GemType.Gold)
+            {
+                throw new InvalidOperationException("Gold cannot be selected.");
+            }
 
             // Verify The bank has sufficient quantity. Color must have at least 4 gems available. 
+            if (Board.Bank.Available[type] < 4)
+            {
+                throw new InvalidOperationException($"Insufficient {type} in the bank, there must be at least 4.");
+            }
 
             // If discarding, verify new total is exactly 10. Can't discard and get below 10.
+            var totalDiscards = discards?.Select(pair => pair.Value).Sum() ?? 0;
+            var newTotal = CurrentPlayer.TotalDisks + 2 - totalDiscards;
+            if (newTotal > 10)
+            {
+                throw new InvalidOperationException("Insufficient discards.");
+            }
 
             // Verify the player owns specified discards.
+            if (discards != null)
+            {
+                foreach (var set in discards)
+                {
+                    if (CurrentPlayer.Disks[set.Key] < set.Value)
+                    {
+                        throw new InvalidOperationException("Discard count mismatch.");
+                    }
+                }
+            }
 
             ClaimNoble(noble);
 
@@ -157,13 +217,31 @@ namespace Splendor.Engine
             ThrowIfGameOver();
 
             // Verify reserve limit (3)
+            if (CurrentPlayer.Reserve.Count == 3)
+            {
+                throw new InvalidOperationException($"Too many cards already reserved.");
+            }
 
             // Verify card is available
+            if (Board.AvailableCards.Where(c => c.Id == id).SingleOrDefault() == null)
+            {
+                throw new InvalidOperationException($"Card id {id} not found.");
+            }
 
             // Verify disk limit 10 (if gold available then it will be taken and a discard must be specified).
             //  discard must not be specified if current disks < 10.
-
-            // Verify player owns discard or is discarding the gold aquired.
+            if (Board.Bank.Available[GemType.Gold] > 0 && CurrentPlayer.TotalDisks == 10)
+            {
+                if (!discard.HasValue)
+                {
+                    throw new InvalidOperationException("Discard required.");
+                }
+                // Verify player owns discard or is discarding the gold aquired.
+                if (CurrentPlayer.Disks[discard.Value] == 0)
+                {
+                    throw new InvalidOperationException($"{discard.Value} is not available to discard.");
+                }
+            }
 
             ClaimNoble(noble);
 
@@ -198,13 +276,38 @@ namespace Splendor.Engine
             ThrowIfGameOver();
 
             // Verify reserve limit (3)
+            if (CurrentPlayer.Reserve.Count == 3)
+            {
+                throw new InvalidOperationException($"Too many cards already reserved.");
+            }
 
-            // Verify deck is not empty
+
+            // Verify level 1-3
+            if (level < 1 || level > 3)
+            {
+                throw new InvalidOperationException($"Invlaid level {level} selected.");
+            }
+
+            // Verify level has cards
+            if (Board.CheckLevelDeckIsEmpty(level))
+            {
+                throw new InvalidOperationException($"Level {level} deck is empty.");
+            }
 
             // Verify disk limit 10 (if gold available then it will be taken and a discard must be specified).
             //  discard must not be specified if current disks < 10.
-
-            // Verify player owns discard or is discarding the gold aquired.
+            if (Board.Bank.Available[GemType.Gold] > 0 && CurrentPlayer.TotalDisks == 10)
+            {
+                if (!discard.HasValue)
+                {
+                    throw new InvalidOperationException("Discard required.");
+                }
+                // Verify player owns discard or is discarding the gold aquired.
+                if (CurrentPlayer.Disks[discard.Value] == 0)
+                {
+                    throw new InvalidOperationException($"{discard.Value} is not available to discard.");
+                }
+            }
 
             ClaimNoble(noble);
 
@@ -240,19 +343,9 @@ namespace Splendor.Engine
             var card = fromReserve ?? fromAvailable ?? throw new InvalidOperationException($"Card {id} could not be found.");
 
             // Verify card is affordable (inlcuding gold as needed)
-            var goldNeeded = 0;
-            var gold = CurrentPlayer.Disks[GemType.Gold];
-            foreach (var cost in card.Cost)
+            if (!Utilities.CanAfford(card.Cost, CurrentPlayer.TotalGems))
             {
-                var diff = cost.Value - CurrentPlayer.Bonuses[cost.Key];
-                if (diff > 0)
-                {
-                    goldNeeded += diff - CurrentPlayer.Disks[cost.Key];
-                    if (goldNeeded > gold)
-                    {
-                        throw new InvalidOperationException($"Insufficient {cost.Key} or {GemType.Gold} for card {card.Id}.");
-                    }
-                }
+                throw new InvalidOperationException($"Cannot afford card id {id}.");
             }
 
             // Pay price (e.g. return tokens to bank as needed)
@@ -261,15 +354,18 @@ namespace Splendor.Engine
                 var diff = cost.Value - CurrentPlayer.Bonuses[cost.Key];
                 if (diff > 0)
                 {
-                    goldNeeded = diff - CurrentPlayer.Disks[cost.Key];
+                    var goldNeeded = diff - CurrentPlayer.Disks[cost.Key];
                     if (goldNeeded > 0)
                     {
                         CurrentPlayer.RemoveDisks(GemType.Gold, goldNeeded);
                         Board.Bank.Return(GemType.Gold, goldNeeded);
                         diff -= goldNeeded;
                     }
-                    CurrentPlayer.RemoveDisks(cost.Key, diff);
-                    Board.Bank.Return(cost.Key, diff);
+                    if (diff > 0)
+                    {
+                        CurrentPlayer.RemoveDisks(cost.Key, diff);
+                        Board.Bank.Return(cost.Key, diff);
+                    }
                 }
             }
 
