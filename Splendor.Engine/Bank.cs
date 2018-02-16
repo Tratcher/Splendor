@@ -32,6 +32,18 @@ namespace Splendor.Engine
         internal void Take(GemType type, int count)
         {
             // Availability check. Limit two at a time, and only if there's at least 4
+            if (count > _available[type])
+            {
+                throw new InvalidOperationException($"Insuficient {type} disks");
+            }
+            if (count > 2)
+            {
+                throw new InvalidOperationException("Can't take more than two at a time.");
+            }
+            if (count > 1 && _available[type] < 4)
+            {
+                throw new InvalidOperationException("There must be at least 4 to take 2.");
+            }
 
             _available[type] = _available[type] - count;
         }

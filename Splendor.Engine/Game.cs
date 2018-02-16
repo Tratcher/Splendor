@@ -96,6 +96,7 @@ namespace Splendor.Engine
             // 0-3 count
             if (types.Count > 3)
             {
+                // TODO: You can only take less than three if there aren't three distinct disks in the bank.
                 throw new InvalidOperationException("Too many types selected.");
             }
 
@@ -258,8 +259,11 @@ namespace Splendor.Engine
             }
 
             // Gain gold
-            Board.Bank.Take(GemType.Gold, 1);
-            CurrentPlayer.AddDisks(GemType.Gold, 1);
+            if (Board.Bank.Available[GemType.Gold] > 0)
+            {
+                Board.Bank.Take(GemType.Gold, 1);
+                CurrentPlayer.AddDisks(GemType.Gold, 1);
+            }
 
 
             AdvanceGame();
@@ -323,8 +327,11 @@ namespace Splendor.Engine
             }
 
             // Gain gold
-            Board.Bank.Take(GemType.Gold, 1);
-            CurrentPlayer.AddDisks(GemType.Gold, 1);
+            if (Board.Bank.Available[GemType.Gold] > 0)
+            {
+                Board.Bank.Take(GemType.Gold, 1);
+                CurrentPlayer.AddDisks(GemType.Gold, 1);
+            }
 
             AdvanceGame();
         }
@@ -434,8 +441,15 @@ namespace Splendor.Engine
         private void AdvanceGame()
         {
             // Check if final round
+            IsFinalRound = Players.Where(p => p.Points >= 15).Any();
 
             // Check if game over, check winner
+            if (IsFinalRound && _currentPlayerIndex == Players.Count - 1)
+            {
+                IsGameOver = true;
+                // Most points with fewest cards
+                Winner = Players.OrderByDescending(p => p.Cards.Count).OrderBy(p => p.Points).First();
+            }
 
             // Advance to next player
             _currentPlayerIndex = (_currentPlayerIndex + 1) % Players.Count;

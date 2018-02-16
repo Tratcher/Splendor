@@ -7,6 +7,8 @@ namespace Splendor
 {
     public interface IPlayerControl
     {
+        string Name { get; }
+        int Wins { get; set; }
         void PlayTurn(Game game);
     }
 }

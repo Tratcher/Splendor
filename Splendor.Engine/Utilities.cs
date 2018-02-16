@@ -19,6 +19,16 @@ namespace Splendor.Engine
             GemType.Sapphire,
         };
 
+        public static readonly IReadOnlyList<GemType> DiscardableDisks = new List<GemType>()
+        {
+            GemType.Gold,
+            GemType.Diamond,
+            GemType.Emerald,
+            GemType.Onyx,
+            GemType.Ruby,
+            GemType.Sapphire,
+        };
+
         public static IReadOnlyList<T> Shuffle<T>(this IEnumerable<T> input)
         {
             var array = input.ToArray();

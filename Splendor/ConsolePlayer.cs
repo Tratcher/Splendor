@@ -14,6 +14,8 @@ namespace Splendor
         }
 
         public string Name { get; }
+
+        public int Wins { get; set; }
         
         public void PlayTurn(Game game)
         {
@@ -321,7 +323,7 @@ namespace Splendor
             }
         }
 
-        private static void ShowGame(Game game)
+        public static void ShowGame(Game game)
         {
             var players = game.Players;
             Console.WriteLine($"{players.Count} players:");
@@ -355,7 +357,7 @@ namespace Splendor
 
         private static string ShowPlayer(Player player)
         {
-            var builder = new StringBuilder($"Name: {player.Name}, Points: {player.Points}\r\nGems:\r\n");
+            var builder = new StringBuilder($"Name: {player.Name}, Points: {player.Points}, Nobles: {player.Nobles.Count}\r\nGems:\r\n");
             ShowGemAmounts(GemType.Diamond, player, builder);
             ShowGemAmounts(GemType.Emerald, player, builder);
             ShowGemAmounts(GemType.Onyx, player, builder);
