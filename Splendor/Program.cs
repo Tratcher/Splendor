@@ -19,12 +19,14 @@ namespace Splendor
                 new RandomPlayer("Random 3"),
             };
 
-            for (int i = 0; i < 1000; i++)
+            var statelmates = 0;
+            for (int i = 0; i < 10000; i++)
             {
-                Console.WriteLine("Game: " + i);
-                PlayGame(playerControls);
+                if (i % 1000 == 0) Console.WriteLine("Game: " + i);
+                PlayGame(playerControls, ref statelmates);
             }
 
+            Console.WriteLine($"Stalemates: {statelmates}");
             Console.WriteLine("Wins:");
             foreach (var player in playerControls)
             {
@@ -32,21 +34,28 @@ namespace Splendor
             }
         }
 
-        public static void PlayGame(IList<IPlayerControl> playerControls)
+        public static void PlayGame(IList<IPlayerControl> playerControls, ref int stalemates)
         {
             var playerNames = playerControls.Select(p => p.Name).ToList();
             var game = new Game(playerNames);
 
             while (!game.IsGameOver)
             {
-                for (int i = 0; i < playerControls.Count; i++)
+                for (int i = 0; i < playerControls.Count && !game.IsGameOver; i++)
                 {
                     playerControls[i].PlayTurn(game);
                 }
             }
 
-            var winner = playerControls.Where(p => p.Name == game.Winner.Name).Single();
-            winner.Wins++;
+            var winner = playerControls.Where(p => p.Name == game.Winner?.Name).SingleOrDefault();
+            if (winner != null)
+            {
+                winner.Wins++;
+            }
+            else
+            {
+                stalemates++;
+            }
 
             // ConsolePlayer.ShowGame(game);
             // Console.WriteLine($"Winner: {game.Winner.Name}");

@@ -8,6 +8,7 @@ namespace Splendor.Engine
     public class Game
     {
         private int _currentPlayerIndex;
+        private int _passCount;
 
         // TODO: What if we want to seed the board for testing?
         public Game(IList<string> playerNames)
@@ -96,9 +97,10 @@ namespace Splendor.Engine
             // 0-3 count
             if (types.Count > 3)
             {
-                // TODO: You can only take less than three if there aren't three distinct disks in the bank.
                 throw new InvalidOperationException("Too many types selected.");
             }
+
+            // TODO: You can only take less than three if there aren't three distinct disks in the bank.
 
             // At least one exists in the bank
             foreach (var disk in types)
@@ -146,6 +148,15 @@ namespace Splendor.Engine
             {
                 Board.Bank.Take(type, 1);
                 CurrentPlayer.AddDisks(type, 1);
+            }
+
+            if (types.Count == 0)
+            {
+                _passCount++;
+            }
+            else
+            {
+                _passCount = 0;
             }
 
             AdvanceGame();
@@ -206,6 +217,8 @@ namespace Splendor.Engine
             Board.Bank.Take(type, 2);
             CurrentPlayer.AddDisks(type, 2);
 
+            _passCount = 0;
+
             AdvanceGame();
         }
 
@@ -265,6 +278,7 @@ namespace Splendor.Engine
                 CurrentPlayer.AddDisks(GemType.Gold, 1);
             }
 
+            _passCount = 0;
 
             AdvanceGame();
         }
@@ -333,6 +347,8 @@ namespace Splendor.Engine
                 CurrentPlayer.AddDisks(GemType.Gold, 1);
             }
 
+            _passCount = 0;
+
             AdvanceGame();
         }
 
@@ -396,6 +412,8 @@ namespace Splendor.Engine
             //  includes disk aquisitions, discards, noble selection, and a card selection id. The secret reservation
             //  level is the only unique parameter.
 
+            _passCount = 0;
+
             AdvanceGame();
         }
 
@@ -449,6 +467,13 @@ namespace Splendor.Engine
                 IsGameOver = true;
                 // Most points with fewest cards
                 Winner = Players.OrderByDescending(p => p.Cards.Count).OrderBy(p => p.Points).First();
+            }
+            else if (_passCount == Players.Count)
+            {
+                // Stalemate
+                IsFinalRound = true;
+                IsGameOver = true;
+                // No winner. We could see who has the most points, but it's more interesting to track stalemates.
             }
 
             // Advance to next player
