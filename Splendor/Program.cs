@@ -12,9 +12,13 @@ namespace Splendor
         {
             Console.WriteLine("Welcome to Splendor");
 
-            var playerControls = new[]
+            var playerControls = new IPlayerControl[]
             {
                 new RandomPlayer("Random 1"),
+                // new GreedyPlayer("Greedy 1"),
+                // new GreedyPlayer("Greedy 2"),
+                // new GreedyPlayer("Greedy 3"),
+                // new GreedyPlayer("Greedy 4"),
                 new RandomPlayer("Random 2"),
                 new RandomPlayer("Random 3"),
             };

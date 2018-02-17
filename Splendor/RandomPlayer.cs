@@ -61,7 +61,6 @@ namespace Splendor
             // Select one. Is it possible for this list to be empty?
             if (actions.Count == 0)
             {
-                // throw new InvalidOperationException("No available actions");
                 // Pass, take no disks
                 game.TakeDistinctGems(new GemType[0], null);
                 return;

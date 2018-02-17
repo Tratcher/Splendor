@@ -96,5 +96,25 @@ namespace Splendor.Engine
 
             return true;
         }
+
+        // How many would I need to use above my current?
+        // This may be used to calculate disk cost over bonuses, or remaining disk cost over a player's total
+        public static int TotalRemainingCost(IReadOnlyDictionary<GemType, int> costs, IReadOnlyDictionary<GemType, int> gems)
+        {
+            var remainingCost = 0;
+            foreach (var cost in costs)
+            {
+                var diff = cost.Value - gems[cost.Key];
+                if (diff > 0)
+                {
+                    remainingCost += diff;
+                }
+            }
+
+            gems.TryGetValue(GemType.Gold, out var gold);
+            remainingCost -= gold;
+
+            return remainingCost > 0 ? remainingCost : 0;
+        }
     }
 }

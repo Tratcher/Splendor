@@ -466,7 +466,7 @@ namespace Splendor.Engine
             {
                 IsGameOver = true;
                 // Most points with fewest cards
-                Winner = Players.OrderByDescending(p => p.Cards.Count).OrderBy(p => p.Points).First();
+                Winner = Players.OrderBy(p => p.Cards.Count).OrderByDescending(p => p.Points).First();
             }
             else if (_passCount == Players.Count)
             {
